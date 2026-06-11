@@ -169,6 +169,14 @@
     text-align: center;
   }
   .hidden { opacity: 0; pointer-events: none; }
+  #home {
+    justify-content: flex-start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-top: max(9vh, 52px);
+    padding-bottom: calc(64px + env(safe-area-inset-bottom));
+  }
+  #home > * { flex-shrink: 0; }
 
   h1 {
     font-size: 2rem; font-weight: 400;
@@ -177,16 +185,16 @@
     text-shadow: 0 0 24px rgba(var(--accent), 0.55);
     transition: text-shadow 1.2s;
   }
-  .subtitle { font-size: 0.8rem; letter-spacing: 0.3em; color: #93a3c8; margin-bottom: 36px; }
-  .label { font-size: 0.75rem; letter-spacing: 0.25em; color: #8493b8; margin: 20px 0 10px; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
+  .subtitle { font-size: 0.8rem; letter-spacing: 0.3em; color: #93a3c8; margin-bottom: clamp(32px, 5.5vh, 64px); }
+  .label { font-size: 0.75rem; letter-spacing: 0.25em; color: #8493b8; margin: clamp(28px, 4.8vh, 56px) 0 14px; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
 
-  .choices { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .choices { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; max-width: 560px; }
   .chip {
     background: rgba(10, 16, 34, 0.45);
     border: 1px solid rgba(var(--accent), 0.35);
     color: #cdd8f0;
     border-radius: 999px;
-    padding: 9px 18px;
+    padding: 11px 22px;
     font-size: 0.88rem; font-family: inherit; letter-spacing: 0.08em;
     cursor: pointer;
     transition: all 0.45s;
@@ -207,7 +215,7 @@
   }
 
   .start-btn {
-    margin-top: 40px;
+    margin-top: clamp(38px, 6.5vh, 76px);
     background: rgba(8, 12, 28, 0.35);
     border: 1px solid rgba(var(--accent), 0.75);
     color: #f2f6ff;
@@ -224,7 +232,7 @@
     box-shadow: 0 0 34px rgba(var(--accent), 0.4);
   }
 
-  .stats { display: flex; gap: 34px; margin-top: 38px; }
+  .stats { display: flex; gap: clamp(30px, 9vw, 52px); margin-top: clamp(36px, 6vh, 72px); }
   .stat .num {
     font-size: 1.65rem; color: #f3f6ff;
     text-shadow: 0 0 16px rgba(var(--accent), 0.6);
