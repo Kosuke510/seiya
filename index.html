@@ -27,6 +27,7 @@
   body[data-theme="star"]   { --accent: 150, 180, 255; --accent2: 190, 150, 255; }
   body[data-theme="sea"]    { --accent: 110, 200, 230; --accent2: 140, 230, 200; }
   body[data-theme="forest"] { --accent: 190, 230, 130; --accent2: 250, 220, 120; }
+  body[data-theme="neon"]   { --accent: 255, 215, 80;  --accent2: 255, 150, 60; }
 
   /* ================= シーン共通 ================= */
   .scene {
@@ -131,6 +132,28 @@
     background: radial-gradient(ellipse at 30% 0%, rgba(20, 60, 30, 0.9), transparent 65%),
                 radial-gradient(ellipse at 75% 0%, rgba(15, 50, 28, 0.85), transparent 60%);
     filter: blur(10px);
+  }
+
+  /* ---------- シーン4: ネオン ---------- */
+  #scene-neon { background: radial-gradient(130% 90% at 50% 18%, #15151f 0%, #0a0a10 55%, #050507 100%); }
+  #scene-neon .gridlines {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.045) 1px, transparent 1px);
+    background-size: 64px 64px;
+    -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 78%, transparent 100%);
+    mask-image: linear-gradient(180deg, transparent 0%, #000 30%, #000 78%, transparent 100%);
+  }
+  #scene-neon .glow-spot {
+    position: absolute; top: 8%; left: 50%;
+    width: 70vmin; height: 46vmin; transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(255, 215, 80, 0.07), transparent 65%);
+    filter: blur(20px);
+    animation: neonPulse 7s ease-in-out infinite;
+  }
+  @keyframes neonPulse {
+    0%, 100% { opacity: 0.6; } 50% { opacity: 1; }
   }
 
   /* ================= パーティクルcanvas ================= */
@@ -272,6 +295,20 @@
   }
   .end-btn:hover { color: #b4c2e2; }
 
+  /* ---------- ラインガイド ---------- */
+  .off { display: none !important; }
+  .line-wrap { position: relative; width: min(94vw, 600px); }
+  .line-wrap canvas { width: 100%; height: 320px; display: block; }
+  .line-phase {
+    position: absolute; top: 2px; left: 0; right: 0;
+    text-align: center;
+    font-size: 1.1rem; letter-spacing: 0.5em; text-indent: 0.5em;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(var(--accent), 1), 0 1px 4px rgba(0,0,0,0.7);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
   /* ================= 完了画面 ================= */
   .done-msg {
     font-size: 1.25rem; letter-spacing: 0.4em; text-indent: 0.4em;
@@ -336,6 +373,12 @@
   </div>
 </div>
 
+<!-- ===== シーン4: ネオン ===== -->
+<div class="scene" id="scene-neon">
+  <div class="gridlines"></div>
+  <div class="glow-spot"></div>
+</div>
+
 <canvas id="fx"></canvas>
 
 <!-- ===== ホーム ===== -->
@@ -354,6 +397,15 @@
     <button class="chip" data-p="5,0,5,0" data-theme="forest">
       <span class="dot" style="background:#bee682"></span>シンプル<small>5-5 ｜ 蛍の森</small>
     </button>
+    <button class="chip" data-p="4,2,8,2" data-theme="neon">
+      <span class="dot" style="background:#ffd750"></span>ディープ<small>4-2-8-2 ｜ ネオン</small>
+    </button>
+  </div>
+
+  <div class="label">ガ イ ド</div>
+  <div class="choices" id="guides">
+    <button class="chip active" data-g="orb">光の球<small>ふくらむ光に合わせる</small></button>
+    <button class="chip" data-g="line">ライン<small>坂を上るボールに合わせる</small></button>
   </div>
 
   <div class="label">時 間</div>
@@ -381,6 +433,10 @@
     <div class="ripple"></div>
     <div class="orb" id="orb"></div>
     <div class="phase-text" id="phaseText">吸 う</div>
+  </div>
+  <div class="line-wrap off" id="lineWrap">
+    <div class="line-phase" id="linePhase">吸 う</div>
+    <canvas id="lineCanvas"></canvas>
   </div>
   <div class="time-left" id="timeLeft">3:00</div>
   <button class="end-btn" id="endBtn">終了する</button>
@@ -445,6 +501,13 @@
         r: rnd(1, 2.4) * dp,
         vx: rnd(-0.08, 0.08) * dp, vy: rnd(-0.22, -0.08) * dp,
         ph: rnd(0, Math.PI * 2), sp: rnd(0.5, 1.2)
+      });
+    } else if (m === 'neon') {
+      for (let i = 0; i < 36; i++) particles.push({
+        x: rnd(0, W), y: rnd(0, H),
+        r: rnd(0.5, 1.5) * dp,
+        vy: rnd(0.05, 0.22) * dp,
+        ph: rnd(0, Math.PI * 2), sp: rnd(0.5, 1.5)
       });
     } else if (m === 'forest') {
       for (let i = 0; i < 42; i++) particles.push({
@@ -514,6 +577,16 @@
           cx.globalAlpha = 1; cx.fillStyle = g;
           cx.beginPath(); cx.arc(p.x, p.y, p.r * 5, 0, 7); cx.fill();
         }
+      }
+    } else if (mode === 'neon') {
+      for (const p of particles) {
+        p.y -= p.vy;
+        p.x += Math.sin(t * 0.5 + p.ph) * 0.1 * dp;
+        if (p.y < -10) { p.y = H + 10; p.x = rnd(0, W); }
+        const tw = 0.15 + 0.55 * (0.5 + 0.5 * Math.sin(p.ph + t * p.sp));
+        cx.globalAlpha = tw;
+        cx.fillStyle = '#ffe9a8';
+        cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill();
       }
     } else if (mode === 'forest') {
       for (const p of particles) {
@@ -586,8 +659,16 @@
     });
     return () => g.querySelector('.chip.active');
   }
-  const getPattern = chipGroup('patterns', b => setTheme(b.dataset.theme));
+  const getPattern = chipGroup('patterns', b => {
+    setTheme(b.dataset.theme);
+    if (b.dataset.theme === 'neon') selectGuide('line'); // リール風はライン推奨
+  });
   const getDuration = chipGroup('durations');
+  const getGuide = chipGroup('guides');
+  function selectGuide(g) {
+    document.querySelectorAll('#guides .chip').forEach(c =>
+      c.classList.toggle('active', c.dataset.g === g));
+  }
 
   /* ============ 終了ベル ============ */
   let audioCtx;
@@ -617,13 +698,88 @@
   }
   const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
 
+  /* ---------- ラインガイド描画 ---------- */
+  let lineRAF = null;
+  function startLine(pattern) {
+    const c = lineCanvas, g2 = c.getContext('2d');
+    const dp = devicePixelRatio;
+    const cycle = pattern.reduce((a, b) => a + b, 0);
+    const t0 = performance.now();
+
+    function yAt(tc) { // サイクル内時刻 → 高さ
+      const [inh, h1, exh] = pattern;
+      const top = c.height * 0.2, bot = c.height * 0.82;
+      if (tc < inh) return bot - (bot - top) * (tc / inh);     // 上り坂=吸う
+      tc -= inh; if (tc < h1) return top;                       // 山頂=止める
+      tc -= h1; if (tc < exh) return top + (bot - top) * (tc / exh); // 下り坂=吐く
+      return bot;                                               // 谷=止める
+    }
+
+    function render(now) {
+      if (c.width !== Math.floor(c.clientWidth * dp)) {
+        c.width = Math.floor(c.clientWidth * dp);
+        c.height = Math.floor(c.clientHeight * dp);
+      }
+      const t = (now - t0) / 1000;
+      const pps = c.width / 14; // 横スクロール速度
+      const ballX = c.width * 0.45;
+      const acc = getComputedStyle(document.body).getPropertyValue('--accent').trim();
+      g2.clearRect(0, 0, c.width, c.height);
+      g2.lineCap = 'round'; g2.lineJoin = 'round';
+
+      function drawPath(x0, x1) {
+        g2.beginPath();
+        for (let x = x0; x <= x1; x += 4 * dp) {
+          const wt = t + (x - ballX) / pps;
+          const y = yAt(((wt % cycle) + cycle) % cycle);
+          x === x0 ? g2.moveTo(x, y) : g2.lineTo(x, y);
+        }
+        g2.stroke();
+      }
+      // これから進む道(白・控えめ)
+      g2.shadowBlur = 0;
+      g2.lineWidth = 2.5 * dp;
+      g2.strokeStyle = 'rgba(255,255,255,0.35)';
+      drawPath(ballX, c.width + 8 * dp);
+      // 通った道(ネオン発光)
+      g2.shadowColor = `rgba(${acc}, 0.9)`;
+      g2.shadowBlur = 16 * dp;
+      g2.lineWidth = 3.5 * dp;
+      g2.strokeStyle = `rgba(${acc}, 0.95)`;
+      drawPath(-8 * dp, ballX);
+      // ボール
+      const by = yAt(((t % cycle) + cycle) % cycle);
+      const r = 11 * dp;
+      const grad = g2.createRadialGradient(ballX - r * 0.3, by - r * 0.35, r * 0.15, ballX, by, r);
+      grad.addColorStop(0, '#ffffff');
+      grad.addColorStop(0.4, `rgba(${acc}, 1)`);
+      grad.addColorStop(1, `rgba(${acc}, 0.85)`);
+      g2.shadowBlur = 28 * dp;
+      g2.fillStyle = grad;
+      g2.beginPath(); g2.arc(ballX, by, r, 0, 7); g2.fill();
+      g2.shadowBlur = 0;
+      lineRAF = requestAnimationFrame(render);
+    }
+    lineRAF = requestAnimationFrame(render);
+  }
+  function stopLine() {
+    if (lineRAF) cancelAnimationFrame(lineRAF);
+    lineRAF = null;
+  }
+
   function startSession() {
     const pattern = getPattern().dataset.p.split(',').map(Number);
+    const guide = getGuide().dataset.g;
     sessionMin = Number(getDuration().dataset.m);
     let remaining = sessionMin * 60;
     sessionStart = Date.now();
     show('session');
     timeLeft.textContent = fmt(remaining);
+
+    breathWrap.classList.toggle('off', guide === 'line');
+    lineWrap.classList.toggle('off', guide !== 'line');
+    stopLine();
+    if (guide === 'line') startLine(pattern);
 
     timerId = setInterval(() => {
       remaining--;
@@ -641,8 +797,9 @@
     let idx = 0;
     function nextPhase() {
       const p = phases[idx];
-      phaseText.style.opacity = 0;
-      setTimeout(() => { phaseText.textContent = p.name; phaseText.style.opacity = 1; }, 250);
+      const pEl = guide === 'line' ? linePhase : phaseText;
+      pEl.style.opacity = 0;
+      setTimeout(() => { pEl.textContent = p.name; pEl.style.opacity = 1; }, 250);
       breathWrap.classList.toggle('breathing-in', !!p.in);
       orb.style.transitionDuration = p.dur + 's';
       orb.style.transitionTimingFunction = p.name === '止める' ? 'linear' : 'cubic-bezier(0.4, 0, 0.5, 1)';
@@ -657,6 +814,7 @@
 
   function finish(completed) {
     clearInterval(timerId); clearTimeout(phaseId);
+    stopLine();
     breathWrap.classList.remove('breathing-in');
     const actualMin = Math.max(0.5, (Date.now() - sessionStart) / 60000);
     const d = recordSession(completed ? sessionMin : Math.round(actualMin * 10) / 10);
