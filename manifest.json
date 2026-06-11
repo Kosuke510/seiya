@@ -1,0 +1,16 @@
+{
+  "name": "静夜 — 夜の瞑想",
+  "short_name": "静夜",
+  "description": "夜空・海・蛍の森とともに呼吸を整える瞑想アプリ",
+  "lang": "ja",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#03040f",
+  "theme_color": "#03040f",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

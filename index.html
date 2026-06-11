@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>静夜 — 瞑想</title>
+<meta name="theme-color" content="#03040f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="静夜">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: "Hiragino Mincho ProN", "Yu Mincho", "Noto Serif JP", serif;
+    background: #03040f;
+    color: #dde4f5;
+  }
+
+  /* ================= テーマ変数 ================= */
+  body[data-theme="star"]   { --accent: 150, 180, 255; --accent2: 190, 150, 255; }
+  body[data-theme="sea"]    { --accent: 110, 200, 230; --accent2: 140, 230, 200; }
+  body[data-theme="forest"] { --accent: 190, 230, 130; --accent2: 250, 220, 120; }
+
+  /* ================= シーン共通 ================= */
+  .scene {
+    position: fixed; inset: 0;
+    opacity: 0;
+    transition: opacity 1.6s ease;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .scene.on { opacity: 1; }
+
+  /* ---------- シーン1: 星空とオーロラ ---------- */
+  #scene-star { background: linear-gradient(180deg, #02020c 0%, #070f2e 40%, #101c45 75%, #1a2750 100%); }
+  .aurora {
+    position: absolute;
+    width: 160%; height: 55%;
+    top: -8%; left: -30%;
+    filter: blur(38px);
+    opacity: 0.55;
+    transform-origin: center;
+  }
+  .aurora.a1 {
+    background: linear-gradient(100deg, transparent 10%, rgba(80, 220, 170, 0.5) 30%, rgba(90, 140, 255, 0.45) 55%, rgba(180, 90, 230, 0.4) 75%, transparent 92%);
+    animation: auroraSway 17s ease-in-out infinite alternate;
+  }
+  .aurora.a2 {
+    top: 4%;
+    background: linear-gradient(80deg, transparent 15%, rgba(140, 90, 240, 0.35) 40%, rgba(60, 200, 190, 0.4) 65%, transparent 88%);
+    animation: auroraSway 23s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes auroraSway {
+    0%   { transform: translateX(-4%) skewY(-5deg) scaleY(1); }
+    50%  { transform: translateX(3%) skewY(-2deg) scaleY(1.18); }
+    100% { transform: translateX(-2%) skewY(-7deg) scaleY(0.95); }
+  }
+  .moon-star {
+    position: absolute; top: 9%; right: 11%;
+    width: 64px; height: 64px; border-radius: 50%;
+    background: radial-gradient(circle at 36% 34%, #fdf6e3, #e8dcb8 60%, #cfc193);
+    box-shadow: 0 0 50px 14px rgba(253, 246, 211, 0.28);
+    animation: moonGlow 9s ease-in-out infinite;
+  }
+  @keyframes moonGlow {
+    0%, 100% { box-shadow: 0 0 45px 12px rgba(253, 246, 211, 0.22); }
+    50%      { box-shadow: 0 0 65px 20px rgba(253, 246, 211, 0.38); }
+  }
+  .mountains { position: absolute; bottom: 0; left: 0; right: 0; height: 26vh; }
+  .mountains svg { width: 100%; height: 100%; display: block; }
+
+  /* ---------- シーン2: 月夜の海 ---------- */
+  #scene-sea { background: linear-gradient(180deg, #020817 0%, #051430 38%, #07294d 68%, #0a3a5e 100%); }
+  .moon-sea {
+    position: absolute; top: 10%; left: 50%;
+    width: 86px; height: 86px; margin-left: -43px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 40% 36%, #fffdf2, #f2ecd2 55%, #d9d0a8);
+    box-shadow: 0 0 70px 22px rgba(255, 250, 220, 0.3);
+  }
+  .moonpath {
+    position: absolute;
+    top: 46%; bottom: 0; left: 50%;
+    width: 130px; margin-left: -65px;
+    background: linear-gradient(180deg,
+      rgba(255, 250, 215, 0.34), rgba(220, 240, 250, 0.12) 55%, transparent);
+    clip-path: polygon(38% 0, 62% 0, 100% 100%, 0% 100%);
+    filter: blur(7px);
+    animation: shimmer 5s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 100% { opacity: 0.55; transform: scaleX(1); }
+    50%      { opacity: 0.95; transform: scaleX(1.12); }
+  }
+  .waves { position: absolute; left: 0; right: 0; bottom: 0; height: 34vh; }
+  .wave {
+    position: absolute; left: 0; bottom: 0;
+    width: 200%; height: 100%;
+    background-repeat: repeat-x;
+    background-size: 50% 100%;
+  }
+  .wave.w1 { animation: waveMove 19s linear infinite; opacity: 0.85; }
+  .wave.w2 { animation: waveMove 13s linear infinite reverse; opacity: 0.6; bottom: -6%; }
+  .wave.w3 { animation: waveMove 9s  linear infinite; opacity: 0.8; bottom: -14%; }
+  @keyframes waveMove { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+  /* ---------- シーン3: 蛍の森 ---------- */
+  #scene-forest { background: linear-gradient(180deg, #030b08 0%, #07190f 45%, #0c2a16 80%, #11341c 100%); }
+  .mist {
+    position: absolute; left: -25%; width: 150%; height: 34%;
+    background: radial-gradient(ellipse at center, rgba(170, 230, 190, 0.10), transparent 70%);
+    filter: blur(26px);
+  }
+  .mist.m1 { bottom: 6%;  animation: mistDrift 26s ease-in-out infinite alternate; }
+  .mist.m2 { bottom: 20%; animation: mistDrift 34s ease-in-out infinite alternate-reverse; opacity: 0.7; }
+  @keyframes mistDrift {
+    from { transform: translateX(-6%); }
+    to   { transform: translateX(6%); }
+  }
+  .forest-sil { position: absolute; bottom: 0; left: 0; right: 0; height: 42vh; }
+  .forest-sil svg { width: 100%; height: 100%; display: block; }
+  .canopy {
+    position: absolute; top: -12%; left: -10%; width: 120%; height: 38%;
+    background: radial-gradient(ellipse at 30% 0%, rgba(20, 60, 30, 0.9), transparent 65%),
+                radial-gradient(ellipse at 75% 0%, rgba(15, 50, 28, 0.85), transparent 60%);
+    filter: blur(10px);
+  }
+
+  /* ================= パーティクルcanvas ================= */
+  #fx { position: fixed; inset: 0; pointer-events: none; }
+
+  /* ================= 画面共通 ================= */
+  .screen {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 24px;
+    transition: opacity 0.8s ease;
+    text-align: center;
+  }
+  .hidden { opacity: 0; pointer-events: none; }
+
+  h1 {
+    font-size: 2rem; font-weight: 400;
+    letter-spacing: 0.5em; text-indent: 0.5em;
+    margin-bottom: 6px; color: #f0f4ff;
+    text-shadow: 0 0 24px rgba(var(--accent), 0.55);
+    transition: text-shadow 1.2s;
+  }
+  .subtitle { font-size: 0.8rem; letter-spacing: 0.3em; color: #93a3c8; margin-bottom: 36px; }
+  .label { font-size: 0.75rem; letter-spacing: 0.25em; color: #8493b8; margin: 20px 0 10px; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
+
+  .choices { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .chip {
+    background: rgba(10, 16, 34, 0.45);
+    border: 1px solid rgba(var(--accent), 0.35);
+    color: #cdd8f0;
+    border-radius: 999px;
+    padding: 9px 18px;
+    font-size: 0.88rem; font-family: inherit; letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: all 0.45s;
+    backdrop-filter: blur(6px);
+  }
+  .chip:hover { border-color: rgba(var(--accent), 0.7); }
+  .chip.active {
+    background: rgba(var(--accent), 0.18);
+    border-color: rgba(var(--accent), 0.9);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(var(--accent), 0.35);
+  }
+  .chip small { display: block; font-size: 0.6rem; color: #8fa0c4; letter-spacing: 0.04em; margin-top: 2px; }
+  .chip.active small { color: #e8efff; }
+  .chip .dot {
+    display: inline-block; width: 7px; height: 7px; border-radius: 50%;
+    margin-right: 6px; vertical-align: 1px;
+  }
+
+  .start-btn {
+    margin-top: 40px;
+    background: rgba(8, 12, 28, 0.35);
+    border: 1px solid rgba(var(--accent), 0.75);
+    color: #f2f6ff;
+    border-radius: 999px;
+    padding: 15px 62px;
+    font-size: 1.05rem; font-family: inherit;
+    letter-spacing: 0.45em; text-indent: 0.45em;
+    cursor: pointer;
+    transition: all 0.5s;
+    backdrop-filter: blur(6px);
+  }
+  .start-btn:hover {
+    background: rgba(var(--accent), 0.16);
+    box-shadow: 0 0 34px rgba(var(--accent), 0.4);
+  }
+
+  .stats { display: flex; gap: 34px; margin-top: 38px; }
+  .stat .num {
+    font-size: 1.65rem; color: #f3f6ff;
+    text-shadow: 0 0 16px rgba(var(--accent), 0.6);
+    transition: text-shadow 1.2s;
+  }
+  .stat .cap { font-size: 0.63rem; letter-spacing: 0.2em; color: #8493b8; margin-top: 5px; }
+
+  /* ================= 瞑想画面 ================= */
+  .breath-wrap {
+    position: relative;
+    width: 300px; height: 300px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 1px solid rgba(var(--accent), 0.3);
+    transition: border-color 1.2s;
+  }
+  .ring.dotted {
+    inset: -16px;
+    border: 1px dashed rgba(var(--accent2), 0.35);
+    animation: spin 70s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .ripple {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 1px solid rgba(var(--accent), 0.5);
+    opacity: 0;
+  }
+  .breathing-in .ripple { animation: rippleOut 4s ease-out infinite; }
+  @keyframes rippleOut {
+    0%   { transform: scale(0.6); opacity: 0.7; }
+    100% { transform: scale(1.45); opacity: 0; }
+  }
+  .orb {
+    width: 132px; height: 132px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 34%,
+      rgba(255, 255, 255, 0.95),
+      rgba(var(--accent), 0.6) 45%,
+      rgba(var(--accent2), 0.28) 72%,
+      transparent 100%);
+    box-shadow: 0 0 70px 24px rgba(var(--accent), 0.3),
+                0 0 130px 60px rgba(var(--accent2), 0.12);
+    transition-property: transform;
+    transition-timing-function: linear;
+    will-change: transform;
+  }
+  .phase-text {
+    position: absolute;
+    font-size: 1.15rem; letter-spacing: 0.5em; text-indent: 0.5em;
+    color: #fff;
+    text-shadow: 0 0 18px rgba(var(--accent), 1), 0 1px 4px rgba(0,0,0,0.7);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+  .time-left {
+    margin-top: 40px;
+    font-size: 0.95rem; letter-spacing: 0.3em;
+    color: #9fb0d4; font-variant-numeric: tabular-nums;
+    text-shadow: 0 1px 5px rgba(0,0,0,0.8);
+  }
+  .end-btn {
+    margin-top: 24px;
+    background: none; border: none;
+    color: #7689b3;
+    font-family: inherit; font-size: 0.75rem; letter-spacing: 0.3em;
+    cursor: pointer; padding: 10px 20px; transition: color 0.3s;
+  }
+  .end-btn:hover { color: #b4c2e2; }
+
+  /* ================= 完了画面 ================= */
+  .done-msg {
+    font-size: 1.25rem; letter-spacing: 0.4em; text-indent: 0.4em;
+    margin-bottom: 14px; color: #f0f4ff;
+    text-shadow: 0 0 22px rgba(var(--accent), 0.6);
+  }
+  .done-sub { font-size: 0.85rem; color: #93a3c8; letter-spacing: 0.15em; line-height: 2; text-shadow: 0 1px 4px rgba(0,0,0,0.8); }
+
+  @media (max-width: 420px) {
+    h1 { font-size: 1.6rem; }
+    .breath-wrap { width: 240px; height: 240px; }
+    .stats { gap: 22px; }
+    .moon-star { width: 50px; height: 50px; }
+    .moon-sea { width: 64px; height: 64px; margin-left: -32px; }
+  }
+</style>
+</head>
+<body data-theme="star">
+
+<!-- ===== シーン1: 星空とオーロラ ===== -->
+<div class="scene on" id="scene-star">
+  <div class="aurora a1"></div>
+  <div class="aurora a2"></div>
+  <div class="moon-star"></div>
+  <div class="mountains">
+    <svg viewBox="0 0 1000 200" preserveAspectRatio="none">
+      <path d="M0,200 L0,130 L120,60 L210,120 L330,40 L450,140 L560,80 L690,150 L800,70 L900,130 L1000,90 L1000,200 Z" fill="#01020a"/>
+      <path d="M0,200 L0,165 L150,110 L280,160 L420,100 L580,170 L720,120 L860,175 L1000,140 L1000,200 Z" fill="#02030f"/>
+    </svg>
+  </div>
+</div>
+
+<!-- ===== シーン2: 月夜の海 ===== -->
+<div class="scene" id="scene-sea">
+  <div class="moon-sea"></div>
+  <div class="moonpath"></div>
+  <div class="waves">
+    <div class="wave w1" id="wave1"></div>
+    <div class="wave w2" id="wave2"></div>
+    <div class="wave w3" id="wave3"></div>
+  </div>
+</div>
+
+<!-- ===== シーン3: 蛍の森 ===== -->
+<div class="scene" id="scene-forest">
+  <div class="canopy"></div>
+  <div class="mist m1"></div>
+  <div class="mist m2"></div>
+  <div class="forest-sil">
+    <svg viewBox="0 0 1000 300" preserveAspectRatio="none">
+      <g fill="#020a05">
+        <path d="M40,300 L40,90 L34,90 L52,40 L46,55 L66,10 L86,55 L80,40 L98,90 L92,90 L92,300 Z"/>
+        <path d="M150,300 L150,120 L142,120 L162,60 L156,75 L178,25 L200,75 L194,60 L214,120 L206,120 L206,300 Z" opacity="0.92"/>
+        <path d="M300,300 L300,80 L292,80 L314,20 L306,38 L330,-15 L354,38 L346,20 L368,80 L360,80 L360,300 Z"/>
+        <path d="M480,300 L480,140 L474,140 L490,90 L485,102 L502,60 L519,102 L514,90 L530,140 L524,140 L524,300 Z" opacity="0.88"/>
+        <path d="M640,300 L640,70 L632,70 L654,12 L646,30 L672,-25 L698,30 L690,12 L712,70 L704,70 L704,300 Z"/>
+        <path d="M820,300 L820,110 L812,110 L834,50 L827,66 L850,15 L873,66 L866,50 L888,110 L880,110 L880,300 Z" opacity="0.93"/>
+        <path d="M950,300 L950,150 L944,150 L960,100 L955,112 L972,70 L989,112 L984,100 L1000,150 L994,150 L994,300 Z" opacity="0.85"/>
+        <rect x="0" y="282" width="1000" height="20"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<canvas id="fx"></canvas>
+
+<!-- ===== ホーム ===== -->
+<div class="screen" id="home">
+  <h1>静夜</h1>
+  <div class="subtitle">SEIYA — 夜の瞑想</div>
+
+  <div class="label">呼 吸 法 と 景 色</div>
+  <div class="choices" id="patterns">
+    <button class="chip active" data-p="4,4,4,4" data-theme="star">
+      <span class="dot" style="background:#9bb4ff"></span>ボックス呼吸<small>4-4-4-4 ｜ 星空とオーロラ</small>
+    </button>
+    <button class="chip" data-p="4,7,8,0" data-theme="sea">
+      <span class="dot" style="background:#6ec8e6"></span>リラックス<small>4-7-8 ｜ 月夜の海</small>
+    </button>
+    <button class="chip" data-p="5,0,5,0" data-theme="forest">
+      <span class="dot" style="background:#bee682"></span>シンプル<small>5-5 ｜ 蛍の森</small>
+    </button>
+  </div>
+
+  <div class="label">時 間</div>
+  <div class="choices" id="durations">
+    <button class="chip" data-m="1">1分</button>
+    <button class="chip active" data-m="3">3分</button>
+    <button class="chip" data-m="5">5分</button>
+    <button class="chip" data-m="10">10分</button>
+  </div>
+
+  <button class="start-btn" id="startBtn">はじめる</button>
+
+  <div class="stats">
+    <div class="stat"><div class="num" id="sStreak">0</div><div class="cap">連続日数</div></div>
+    <div class="stat"><div class="num" id="sTotal">0</div><div class="cap">累計（分）</div></div>
+    <div class="stat"><div class="num" id="sCount">0</div><div class="cap">セッション</div></div>
+  </div>
+</div>
+
+<!-- ===== 瞑想中 ===== -->
+<div class="screen hidden" id="session">
+  <div class="breath-wrap" id="breathWrap">
+    <div class="ring"></div>
+    <div class="ring dotted"></div>
+    <div class="ripple"></div>
+    <div class="orb" id="orb"></div>
+    <div class="phase-text" id="phaseText">吸 う</div>
+  </div>
+  <div class="time-left" id="timeLeft">3:00</div>
+  <button class="end-btn" id="endBtn">終了する</button>
+</div>
+
+<!-- ===== 完了 ===== -->
+<div class="screen hidden" id="done">
+  <div class="done-msg">おつかれさまでした</div>
+  <div class="done-sub" id="doneSub"></div>
+  <button class="start-btn" id="backBtn" style="margin-top:36px">もどる</button>
+</div>
+
+<script>
+(() => {
+  /* ============ 波のSVG背景を生成 ============ */
+  function waveDataURI(color, amp, y) {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 200" preserveAspectRatio="none">
+      <path d="M0,${y} C75,${y-amp} 150,${y+amp} 225,${y} C300,${y-amp} 375,${y+amp} 450,${y} C525,${y-amp} 600,${y+amp} 600,${y} L600,200 L0,200 Z" fill="${color}"/>
+    </svg>`;
+    return `url("data:image/svg+xml,${encodeURIComponent(svg)}")`;
+  }
+  document.getElementById('wave1').style.backgroundImage = waveDataURI('#0a2b4a', 16, 60);
+  document.getElementById('wave2').style.backgroundImage = waveDataURI('#082138', 22, 80);
+  document.getElementById('wave3').style.backgroundImage = waveDataURI('#04101f', 18, 100);
+
+  /* ============ パーティクルエンジン (canvas) ============ */
+  const cv = document.getElementById('fx');
+  const cx = cv.getContext('2d');
+  let W, H, mode = 'star', particles = [], shoot = null, t = 0;
+
+  function resize() {
+    W = cv.width = innerWidth * devicePixelRatio;
+    H = cv.height = innerHeight * devicePixelRatio;
+    cv.style.width = innerWidth + 'px';
+    cv.style.height = innerHeight + 'px';
+    initParticles(mode);
+  }
+  addEventListener('resize', resize);
+
+  const rnd = (a, b) => a + Math.random() * (b - a);
+
+  function initParticles(m) {
+    particles = [];
+    const dp = devicePixelRatio;
+    if (m === 'star') {
+      for (let i = 0; i < 150; i++) particles.push({
+        x: rnd(0, W), y: rnd(0, H * 0.72),
+        r: rnd(0.5, 1.9) * dp,
+        ph: rnd(0, Math.PI * 2), sp: rnd(0.4, 1.4),
+        hue: Math.random() < 0.12 ? rnd(190, 260) : 0
+      });
+    } else if (m === 'sea') {
+      // 海面のきらめき + 漂う燐光
+      for (let i = 0; i < 60; i++) particles.push({
+        kind: 'sparkle',
+        x: rnd(W * 0.2, W * 0.8), y: rnd(H * 0.55, H * 0.95),
+        r: rnd(0.5, 1.6) * dp, ph: rnd(0, Math.PI * 2), sp: rnd(1.2, 2.6)
+      });
+      for (let i = 0; i < 26; i++) particles.push({
+        kind: 'drift',
+        x: rnd(0, W), y: rnd(H * 0.3, H),
+        r: rnd(1, 2.4) * dp,
+        vx: rnd(-0.08, 0.08) * dp, vy: rnd(-0.22, -0.08) * dp,
+        ph: rnd(0, Math.PI * 2), sp: rnd(0.5, 1.2)
+      });
+    } else if (m === 'forest') {
+      for (let i = 0; i < 42; i++) particles.push({
+        x: rnd(0, W), y: rnd(H * 0.25, H * 0.95),
+        r: rnd(1.2, 2.6) * dp,
+        a1: rnd(0, Math.PI * 2), a2: rnd(0, Math.PI * 2),
+        s1: rnd(0.004, 0.012), s2: rnd(0.003, 0.01),
+        amp: rnd(0.3, 0.9) * dp,
+        ph: rnd(0, Math.PI * 2), sp: rnd(0.6, 1.8),
+        warm: Math.random() < 0.3
+      });
+    }
+  }
+
+  function draw() {
+    t += 0.016;
+    cx.clearRect(0, 0, W, H);
+    const dp = devicePixelRatio;
+
+    if (mode === 'star') {
+      for (const p of particles) {
+        const tw = 0.25 + 0.75 * (0.5 + 0.5 * Math.sin(p.ph + t * p.sp));
+        cx.globalAlpha = tw;
+        cx.fillStyle = p.hue ? `hsl(${p.hue}, 80%, 80%)` : '#fff';
+        cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill();
+        if (p.r > 1.4 * dp && tw > 0.85) { // 大きい星に十字の光
+          cx.globalAlpha = (tw - 0.85) * 2.5;
+          cx.fillRect(p.x - p.r * 4, p.y - 0.5 * dp, p.r * 8, dp);
+          cx.fillRect(p.x - 0.5 * dp, p.y - p.r * 4, dp, p.r * 8);
+        }
+      }
+      // 流れ星
+      if (!shoot && Math.random() < 0.0035) {
+        shoot = { x: rnd(W * 0.3, W * 0.95), y: rnd(H * 0.05, H * 0.3), life: 1 };
+      }
+      if (shoot) {
+        shoot.life -= 0.018;
+        shoot.x -= 9 * dp; shoot.y += 4.5 * dp;
+        if (shoot.life <= 0) shoot = null;
+        else {
+          const g = cx.createLinearGradient(shoot.x, shoot.y, shoot.x + 110 * dp, shoot.y - 55 * dp);
+          g.addColorStop(0, `rgba(255,255,255,${shoot.life})`);
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          cx.strokeStyle = g; cx.lineWidth = 1.4 * dp;
+          cx.globalAlpha = 1;
+          cx.beginPath();
+          cx.moveTo(shoot.x, shoot.y);
+          cx.lineTo(shoot.x + 110 * dp, shoot.y - 55 * dp);
+          cx.stroke();
+        }
+      }
+    } else if (mode === 'sea') {
+      for (const p of particles) {
+        if (p.kind === 'sparkle') {
+          const tw = Math.max(0, Math.sin(p.ph + t * p.sp));
+          cx.globalAlpha = tw * 0.8;
+          cx.fillStyle = '#ffeebb';
+          cx.fillRect(p.x - p.r * 2.5, p.y - p.r * 0.4, p.r * 5, p.r * 0.8);
+        } else {
+          p.x += p.vx + Math.sin(t * 0.7 + p.ph) * 0.15 * dp;
+          p.y += p.vy;
+          if (p.y < H * 0.25) { p.y = H + 10; p.x = rnd(0, W); }
+          const tw = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(p.ph + t * p.sp));
+          const g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 5);
+          g.addColorStop(0, `rgba(140, 230, 220, ${0.75 * tw})`);
+          g.addColorStop(1, 'rgba(140, 230, 220, 0)');
+          cx.globalAlpha = 1; cx.fillStyle = g;
+          cx.beginPath(); cx.arc(p.x, p.y, p.r * 5, 0, 7); cx.fill();
+        }
+      }
+    } else if (mode === 'forest') {
+      for (const p of particles) {
+        p.a1 += p.s1; p.a2 += p.s2;
+        p.x += Math.cos(p.a1) * p.amp;
+        p.y += Math.sin(p.a2) * p.amp * 0.7;
+        if (p.x < -20) p.x = W + 20; if (p.x > W + 20) p.x = -20;
+        if (p.y < H * 0.15) p.y = H * 0.15; if (p.y > H) p.y = H;
+        const tw = Math.max(0, Math.sin(p.ph + t * p.sp)) ** 2;
+        const col = p.warm ? '255, 215, 120' : '190, 240, 130';
+        const g = cx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
+        g.addColorStop(0, `rgba(${col}, ${0.9 * tw})`);
+        g.addColorStop(0.25, `rgba(${col}, ${0.45 * tw})`);
+        g.addColorStop(1, `rgba(${col}, 0)`);
+        cx.globalAlpha = 1; cx.fillStyle = g;
+        cx.beginPath(); cx.arc(p.x, p.y, p.r * 6, 0, 7); cx.fill();
+        cx.globalAlpha = tw;
+        cx.fillStyle = '#fffce0';
+        cx.beginPath(); cx.arc(p.x, p.y, p.r * 0.55, 0, 7); cx.fill();
+      }
+    }
+    cx.globalAlpha = 1;
+    requestAnimationFrame(draw);
+  }
+
+  /* ============ テーマ切替 ============ */
+  function setTheme(name) {
+    mode = name;
+    document.body.dataset.theme = name;
+    document.querySelectorAll('.scene').forEach(s =>
+      s.classList.toggle('on', s.id === 'scene-' + name));
+    initParticles(name);
+  }
+
+  /* ============ 記録 (localStorage) ============ */
+  const KEY = 'seiya_meditation';
+  const load = () => { try { return JSON.parse(localStorage.getItem(KEY)) || {}; } catch { return {}; } };
+  const save = d => { try { localStorage.setItem(KEY, JSON.stringify(d)); } catch {} };
+  const dstr = off => {
+    const d = new Date(); d.setDate(d.getDate() + off);
+    return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+  };
+  function renderStats() {
+    const d = load();
+    sStreak.textContent = d.streak || 0;
+    sTotal.textContent = Math.round(d.totalMin || 0);
+    sCount.textContent = d.count || 0;
+  }
+  function recordSession(minutes) {
+    const d = load();
+    if (d.lastDay !== dstr(0)) {
+      d.streak = (d.lastDay === dstr(-1)) ? (d.streak || 0) + 1 : 1;
+      d.lastDay = dstr(0);
+    }
+    d.totalMin = (d.totalMin || 0) + minutes;
+    d.count = (d.count || 0) + 1;
+    save(d);
+    return d;
+  }
+
+  /* ============ 選択チップ ============ */
+  function chipGroup(id, onChange) {
+    const g = document.getElementById(id);
+    g.addEventListener('click', e => {
+      const b = e.target.closest('.chip');
+      if (!b) return;
+      g.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      b.classList.add('active');
+      if (onChange) onChange(b);
+    });
+    return () => g.querySelector('.chip.active');
+  }
+  const getPattern = chipGroup('patterns', b => setTheme(b.dataset.theme));
+  const getDuration = chipGroup('durations');
+
+  /* ============ 終了ベル ============ */
+  let audioCtx;
+  function bell() {
+    try {
+      audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+      const t0 = audioCtx.currentTime;
+      [523.25, 659.25, 783.99].forEach((f, i) => {
+        const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+        o.type = 'sine'; o.frequency.value = f;
+        g.gain.setValueAtTime(0, t0 + i * 0.05);
+        g.gain.linearRampToValueAtTime(0.12, t0 + i * 0.05 + 0.02);
+        g.gain.exponentialRampToValueAtTime(0.0001, t0 + 3.5);
+        o.connect(g).connect(audioCtx.destination);
+        o.start(t0 + i * 0.05); o.stop(t0 + 4);
+      });
+    } catch {}
+  }
+
+  /* ============ セッション ============ */
+  const screens = { home, session, done };
+  const breathWrap = document.getElementById('breathWrap');
+  let timerId = null, phaseId = null, sessionStart = 0, sessionMin = 0;
+
+  function show(name) {
+    Object.entries(screens).forEach(([k, el]) => el.classList.toggle('hidden', k !== name));
+  }
+  const fmt = s => Math.floor(s / 60) + ':' + String(Math.floor(s % 60)).padStart(2, '0');
+
+  function startSession() {
+    const pattern = getPattern().dataset.p.split(',').map(Number);
+    sessionMin = Number(getDuration().dataset.m);
+    let remaining = sessionMin * 60;
+    sessionStart = Date.now();
+    show('session');
+    timeLeft.textContent = fmt(remaining);
+
+    timerId = setInterval(() => {
+      remaining--;
+      timeLeft.textContent = fmt(Math.max(0, remaining));
+      if (remaining <= 0) finish(true);
+    }, 1000);
+
+    const phases = [
+      { name: '吸 う',  dur: pattern[0], scale: 1.85, in: true },
+      { name: '止める', dur: pattern[1], scale: 1.85 },
+      { name: '吐 く',  dur: pattern[2], scale: 1.0 },
+      { name: '止める', dur: pattern[3], scale: 1.0 },
+    ].filter(p => p.dur > 0);
+
+    let idx = 0;
+    function nextPhase() {
+      const p = phases[idx];
+      phaseText.style.opacity = 0;
+      setTimeout(() => { phaseText.textContent = p.name; phaseText.style.opacity = 1; }, 250);
+      breathWrap.classList.toggle('breathing-in', !!p.in);
+      orb.style.transitionDuration = p.dur + 's';
+      orb.style.transitionTimingFunction = p.name === '止める' ? 'linear' : 'cubic-bezier(0.4, 0, 0.5, 1)';
+      orb.style.transform = `scale(${p.scale})`;
+      idx = (idx + 1) % phases.length;
+      phaseId = setTimeout(nextPhase, p.dur * 1000);
+    }
+    orb.style.transitionDuration = '0s';
+    orb.style.transform = 'scale(1)';
+    setTimeout(nextPhase, 60);
+  }
+
+  function finish(completed) {
+    clearInterval(timerId); clearTimeout(phaseId);
+    breathWrap.classList.remove('breathing-in');
+    const actualMin = Math.max(0.5, (Date.now() - sessionStart) / 60000);
+    const d = recordSession(completed ? sessionMin : Math.round(actualMin * 10) / 10);
+    if (completed) bell();
+    doneSub.innerHTML =
+      (completed ? `${sessionMin}分の瞑想を終えました` : '瞑想を終了しました') +
+      `<br>連続 ${d.streak} 日目 ・ 累計 ${Math.round(d.totalMin)} 分`;
+    show('done');
+    renderStats();
+  }
+
+  startBtn.addEventListener('click', () => {
+    try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); } catch {}
+    startSession();
+  });
+  endBtn.addEventListener('click', () => finish(false));
+  backBtn.addEventListener('click', () => show('home'));
+
+  resize();
+  draw();
+  renderStats();
+
+  /* ============ Service Worker (PWA) ============ */
+  if ('serviceWorker' in navigator) {
+    addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+  }
+})();
+</script>
+</body>
+</html>
